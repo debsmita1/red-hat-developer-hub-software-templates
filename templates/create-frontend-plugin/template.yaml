@@ -3,7 +3,9 @@ kind: Template
 metadata:
   name: create-frontend-plugin
   title: Create Frontend Plugin Template
-  description: Template for creating a fontend plugin skeleton
+  description: Template for the scaffolder that creates a frontend plugin skeleton
+  annotations:
+    backstage.io/techdocs-ref: dir.
   tags:
     - frontend-plugin
     - backstage-plugin
@@ -37,18 +39,21 @@ spec:
           ui:options:
             allowedHosts:
               - github.com
-        is_existing_repo:
-          title: Is this an Existing Repository ?
-          type: boolean
-          description: Check the checkbox if repository already exists
-          default: false
+        pluginLocation:
+          type: string
+          title: Where to publish this new plugin?
+          ui:widget: radio
+          default: Create a new repository within the specified organization
+          enum:
+            - Submit a pull request to the same repository
+            - Create a new repository within the specified organization
       dependencies:
-        is_existing_repo:
+        pluginLocation:
           allOf:
             - if:
                 properties:
-                  is_existing_repo:
-                    const: true
+                  pluginLocation:
+                    const: Submit a pull request to the same repository
               then:
                 properties:
                   branchName:
@@ -82,7 +87,7 @@ spec:
     # This step publishes the contents of the working directory to GitHub if it is a new repository.
     - id: publish
       name: Publish the frontend plugin skeleton in a new repository
-      if: ${{ parameters.is_existing_repo === false }}
+      if: ${{ parameters.pluginLocation === 'Create a new repository within the specified organization' }}
       action: publish:github
       input:
         allowedHosts: ["github.com"]
@@ -93,7 +98,7 @@ spec:
     # This step creates a pull request with the contents of the working directory.
     - id: publishGithub
       name: Create pull request with the frontend plugin skeleton
-      if: ${{ parameters.is_existing_repo  === true }}
+      if: ${{ parameters.pluginLocation  === 'Submit a pull request to the same repository' }}
       action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.repoUrl }}
